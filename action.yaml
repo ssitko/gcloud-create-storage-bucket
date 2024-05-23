@@ -1,0 +1,46 @@
+name: "gcloud storage create bucket"
+description: "gcloud shell script for creating storage bucket for given google cloud project"
+inputs:
+  project-id:
+    description: "Project ID"
+    required: true
+  bucket-name:
+    description: "Topic name"
+    required: true
+  storage-type:
+    description: "Type of google cloud storage"
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        PROJECT_ID=${{ inputs.project-id }}
+        BUCKET_NAME=${{ inputs.bucket-name }}
+        STORAGE_TYPE=${{ inputs.storage-type }}
+
+        if [[ -z "${BUCKET_NAME}" ]]; then
+            echo ">>> (Infra) | Critical: required <bucket-bame> parameter is not set! Aborting..."
+            exit 1
+        elif [[ -z "${PROJECT_ID}" ]]; then
+            echo ">>> (Infra) | Critical: <project-id> parameter is not set! Aborting..."
+            exit 1
+        elif [[ -z "${STORAGE_TYPE}" ]]; then
+            STORAGE_TYPE="STANDARD"
+            echo ">>> (Infra) | Warning: <storage-type> paramater is not set! Defaulting it to default STORAGE value..."
+        fi
+
+        RESULT=$(
+            gcloud storage buckets list \
+                --project=$PROJECT_ID \
+                --filter="name.scope(buckets)=$BUCKET_NAME" \
+                --format="value(name)" 2>/dev/null
+        )
+
+        if [[ "${RESULT}" == "" ]]; then
+            echo ">>> (Infra) | Bucket <${BUCKET_NAME}> does not exist, creating..."
+
+            gcloud storage buckets create gs://$BUCKET_NAME --project=$PROJECT_ID --default-storage-class=$STORAGE_TYPE --location=EUROPE-WEST2 --uniform-bucket-level-access
+        else
+            echo ">>> (Infra) | Bucket <${BUCKET_NAME}> already exists. Skipping..."
+        fi
+      shell: bash
