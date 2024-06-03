@@ -10,6 +10,9 @@ inputs:
   storage-type:
     description: "Type of google cloud storage"
     required: false
+  notification-topic:
+    description: "Topic name for storage bucket object notification"
+    required: false
 runs:
   using: "composite"
   steps:
@@ -17,16 +20,17 @@ runs:
         PROJECT_ID=${{ inputs.project-id }}
         BUCKET_NAME=${{ inputs.bucket-name }}
         STORAGE_TYPE=${{ inputs.storage-type }}
+        NOTIFICATION_TOPIC=${{ inputs.notification-topic }}
 
         if [[ -z "${BUCKET_NAME}" ]]; then
-            echo ">>> (Infra) | Critical: required <bucket-bame> parameter is not set! Aborting..."
-            exit 1
+          echo ">>> (Infra) | Critical: required <bucket-bame> parameter is not set! Aborting..."
+          exit 1
         elif [[ -z "${PROJECT_ID}" ]]; then
-            echo ">>> (Infra) | Critical: <project-id> parameter is not set! Aborting..."
-            exit 1
+          echo ">>> (Infra) | Critical: <project-id> parameter is not set! Aborting..."
+          exit 1
         elif [[ -z "${STORAGE_TYPE}" ]]; then
-            STORAGE_TYPE="STANDARD"
-            echo ">>> (Infra) | Warning: <storage-type> paramater is not set! Defaulting it to default STORAGE value..."
+          STORAGE_TYPE="STANDARD"
+          echo ">>> (Infra) | Warning: <storage-type> paramater is not set! Defaulting it to default STORAGE value..."
         fi
 
         RESULT=$(
@@ -37,10 +41,16 @@ runs:
         )
 
         if [[ "${RESULT}" == "" ]]; then
-            echo ">>> (Infra) | Bucket <${BUCKET_NAME}> does not exist, creating..."
+          echo ">>> (Infra) | Bucket <${BUCKET_NAME}> does not exist, creating..."
 
-            gcloud storage buckets create gs://$BUCKET_NAME --project=$PROJECT_ID --default-storage-class=$STORAGE_TYPE --location=EUROPE-WEST2 --uniform-bucket-level-access
+          gcloud storage buckets create gs://$BUCKET_NAME --project=$PROJECT_ID --default-storage-class=$STORAGE_TYPE --location=EUROPE-WEST2 --uniform-bucket-level-access
+
+          if [[ "${NOTIFICATION_TOPIC}" != "" ]]; then
+              echo ">>> (Infra) | <notification-topic> parameter is set - setting up pubsub notification on <$NOTIFICATION_TOPIC> topic for <$BUCKET_NAME> storage bucket..."
+
+              gcloud storage buckets notifications create gs://$BUCKET_NAME --topic=$NOTIFICATION_TOPIC --event-types=$OBJECT_FINALIZE
+          fi
         else
-            echo ">>> (Infra) | Bucket <${BUCKET_NAME}> already exists. Skipping..."
+          echo ">>> (Infra) | Bucket <${BUCKET_NAME}> already exists. Skipping..."
         fi
       shell: bash
