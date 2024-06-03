@@ -13,6 +13,9 @@ inputs:
   notification-topic:
     description: "Topic name for storage bucket object notification"
     required: false
+  event-type:
+    description: "Type of an event bound with storage notification"
+    required: false
 runs:
   using: "composite"
   steps:
@@ -21,6 +24,7 @@ runs:
         BUCKET_NAME=${{ inputs.bucket-name }}
         STORAGE_TYPE=${{ inputs.storage-type }}
         NOTIFICATION_TOPIC=${{ inputs.notification-topic }}
+        EVENT_TYPE=${{ inputs.event-type }}
 
         if [[ -z "${BUCKET_NAME}" ]]; then
           echo ">>> (Infra) | Critical: required <bucket-bame> parameter is not set! Aborting..."
@@ -46,9 +50,18 @@ runs:
           gcloud storage buckets create gs://$BUCKET_NAME --project=$PROJECT_ID --default-storage-class=$STORAGE_TYPE --location=EUROPE-WEST2 --uniform-bucket-level-access
 
           if [[ "${NOTIFICATION_TOPIC}" != "" ]]; then
-              echo ">>> (Infra) | <notification-topic> parameter is set - setting up pubsub notification on <$NOTIFICATION_TOPIC> topic for <$BUCKET_NAME> storage bucket..."
+            echo ">>> (Infra) | <notification-topic> parameter is set - setting up pubsub notification on <$NOTIFICATION_TOPIC> topic for <$BUCKET_NAME> storage bucket..."
 
-              gcloud storage buckets notifications create gs://$BUCKET_NAME --topic=$NOTIFICATION_TOPIC --event-types=$OBJECT_FINALIZE
+            case $EVENT_TYPE in\
+              OBJECT_FINALIZE | OBJECT_METADATA_UPDATE | OBJECT_DELETE | OBJECT_ARCHIVE )
+                gcloud storage buckets notifications create gs://$BUCKET_NAME --topic=$NOTIFICATION_TOPIC --event-types=$OBJECT_FINALIZE
+                ;;
+
+              *)
+                echo -n ">>> (Infra) | Critical: <notification-topic> parameter is set but <event-type> parameter is invalid: $EVENT_TYPE. Aborting..."
+                exit 1
+                ;;
+            esac
           fi
         else
           echo ">>> (Infra) | Bucket <${BUCKET_NAME}> already exists. Skipping..."
