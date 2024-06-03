@@ -52,7 +52,7 @@ runs:
           if [[ "${NOTIFICATION_TOPIC}" != "" ]]; then
             echo ">>> (Infra) | <notification-topic> parameter is set - setting up pubsub notification on <$NOTIFICATION_TOPIC> topic for <$BUCKET_NAME> storage bucket..."
 
-            case $EVENT_TYPE in\
+            case $EVENT_TYPE in
               OBJECT_FINALIZE | OBJECT_METADATA_UPDATE | OBJECT_DELETE | OBJECT_ARCHIVE )
                 gcloud storage buckets notifications create gs://$BUCKET_NAME --topic=$NOTIFICATION_TOPIC --event-types=$OBJECT_FINALIZE
                 ;;
