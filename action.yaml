@@ -20,11 +20,11 @@ runs:
   using: "composite"
   steps:
     - run: |
-        PROJECT_ID=${{ inputs.project-id }}
-        BUCKET_NAME=${{ inputs.bucket-name }}
-        STORAGE_TYPE=${{ inputs.storage-type }}
-        NOTIFICATION_TOPIC=${{ inputs.notification-topic }}
-        EVENT_TYPE=${{ inputs.event-type }}
+        PROJECT_ID="${{ inputs.project-id }}"
+        BUCKET_NAME="${{ inputs.bucket-name }}"
+        STORAGE_TYPE="${{ inputs.storage-type }}"
+        NOTIFICATION_TOPIC="${{ inputs.notification-topic }}"
+        EVENT_TYPE="${{ inputs.event-type }}"
 
         if [[ -z "${BUCKET_NAME}" ]]; then
           echo ">>> (Infra) | Critical: required <bucket-bame> parameter is not set! Aborting..."
