@@ -16,6 +16,8 @@ your-gh-manifest.yaml
     project-id: your-project-id
     bucket-name: your-topic-name
     storage-type: COLDLINE // this is optional, it deaults to STANDARD if not provided
+    notification-topic: topic-name // this is optional, but if provided, must be defined with event-type parameter
+    event-type: OBJECT_FINALIZE
 ```
 
 ### Szymon Sitko @ 2024
